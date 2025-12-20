@@ -1,3 +1,9 @@
+"""
+Exports robot assemblies to MuJoCo XML format.
+
+Takes the parsed Onshape assembly data (bodies, joints, meshes) and writes
+a complete MuJoCo model file that can be loaded for simulation.
+"""
 from __future__ import annotations
 import numpy as np
 import os
@@ -124,25 +130,27 @@ class ExporterMuJoCo(Exporter):
                 if "forcerange" in joint.properties:
                     actuator += f'forcerange="-{joint.properties["forcerange"]} {joint.properties["forcerange"]}" '
 
-                joint_limits = joint.properties.get("limits", joint.limits)
-                limits_are_set = joint.properties.get("limits", False) != False
-                if joint_limits and (type == "position" or limits_are_set):
-                    if joint.properties.get("range", True) and type == "position":
-                        actuator += f'inheritrange="1" '
-                    else:
-                        actuator += f'ctrlrange="{joint_limits[0]} {joint_limits[1]}" '
+                if "ctrlrange" in joint.properties:
+                    ctrlrange = joint.properties["ctrlrange"]
+                    actuator += f'ctrlrange="{ctrlrange[0]} {ctrlrange[1]}" '
+                else:
+                    joint_limits = joint.properties.get("limits", joint.limits)
+                    limits_are_set = joint.properties.get("limits", False) != False
+                    if joint_limits and (type == "position" or limits_are_set):
+                        if joint.properties.get("range", True) and type == "position":
+                            actuator += f'inheritrange="1" '
+                        else:
+                            actuator += f'ctrlrange="{joint_limits[0]} {joint_limits[1]}" '
 
                 actuator += "/>"
                 self.append(actuator)
 
         self.append("</actuator>")
 
-    def get_equality_attributes(self, closure: Closure) -> str:
+    def get_equality_attributes(self, name1: str, name2: str) -> str:
         all_attributes = {}
         for name, attributes in self.equalities.items():
-            if fnmatch.fnmatch(closure.frame1, name) and fnmatch.fnmatch(
-                closure.frame2, name
-            ):
+            if fnmatch.fnmatch(name1, name) and fnmatch.fnmatch(name2, name):
                 all_attributes.update(attributes)
 
         if len(all_attributes) > 0:
@@ -153,10 +161,17 @@ class ExporterMuJoCo(Exporter):
 
         return ""
 
+    def get_body_properties(self, body_name: str) -> dict:
+        properties = self.body_properties.get("default",{})
+        for pattern, props in self.body_properties.items():
+            if fnmatch.fnmatch(body_name, pattern):
+                properties = {**properties, **props}
+        return properties
+
     def add_equalities(self, robot: Robot):
         self.append("<equality>")
         for closure in robot.closures:
-            attributes = self.get_equality_attributes(closure)
+            attributes = self.get_equality_attributes(closure.frame1, closure.frame2)
 
             if closure.closure_type == Closure.FIXED:
                 self.append(
@@ -179,13 +194,36 @@ class ExporterMuJoCo(Exporter):
 
         for joint in robot.joints:
             if joint.relation is not None:
+                attributes = self.get_equality_attributes(
+                    joint.relation.name, joint.relation.name
+                )
                 self.append(
-                    f'<joint joint1="{joint.name}" joint2="{joint.relation.source_joint}" polycoef="0 {joint.relation.ratio} 0 0 0" />'
+                    f'<joint name="{joint.relation.name}" joint1="{joint.name}" joint2="{joint.relation.source_joint}"' +
+                    f'polycoef="0 {joint.relation.ratio} 0 0 0" {attributes}/>'
                 )
 
         self.append("</equality>")
 
-    def add_inertial(self, mass: float, com: np.ndarray, inertia: np.ndarray):
+    def add_inertial(
+            self,
+            mass: float,
+            com: np.ndarray,
+            inertia: np.ndarray,
+            properties: dict | None = None,
+            ):
+        
+        # Apply override from properties
+        if properties:
+            mass = properties.get("mass", mass)
+            if "pos" in properties:
+                com = np.array(properties["pos"])
+            if "fullinertia" in properties:
+                fi = properties["fullinertia"]
+                inertia = np.array([
+                    [fi[0], fi[3], fi[4]],
+                    [fi[3], fi[1], fi[5]],
+                    [fi[4], fi[5], fi[2]],
+                ])
         # Ensuring epsilon masses and inertias
         mass = max(1e-9, mass)
         inertia[0, 0] = max(1e-9, inertia[0, 0])
@@ -210,7 +248,7 @@ class ExporterMuJoCo(Exporter):
         inertial += " />"
         self.append(inertial)
 
-    def add_mesh(self, part: Part, class_: str, T_world_link: np.ndarray, mesh: Mesh):
+    def add_mesh(self, part: Part, class_: str, T_world_link: np.ndarray, mesh: Mesh, condim: int | None = None):
         """
         Add a mesh node (e.g. STL) to the MuJoCo file
         """
@@ -225,6 +263,8 @@ class ExporterMuJoCo(Exporter):
         # Adding the geom node
         geom = f'<geom type="mesh" class="{class_}" '
         geom += self.pos_quat(T_link_part) + " "
+        if condim is not None:
+            geom += f'condim="{condim}" '
         geom += f'mesh="{xml_escape(mesh_file_no_ext)}" '
         geom += f'material="{xml_escape(material_name)}" '
 
@@ -242,8 +282,7 @@ class ExporterMuJoCo(Exporter):
         self.append(geom)
 
     def add_shape(
-        self, part: Part, class_: str, T_world_link: np.ndarray, shape: Shape
-    ):
+        self, part: Part, class_: str, T_world_link: np.ndarray, shape: Shape, condim: int | None = None):
         """
         Add pure shape geometry.
         """
@@ -254,6 +293,8 @@ class ExporterMuJoCo(Exporter):
         )
         geom += self.pos_quat(T_link_shape) + " "
 
+        if condim is not None:
+            geom += f'condim="{condim}" '
         if isinstance(shape, Box):
             geom += 'type="box" size="%g %g %g" ' % self.config.round(tuple(shape.size / 2))
         elif isinstance(shape, Cylinder):
@@ -277,7 +318,7 @@ class ExporterMuJoCo(Exporter):
         geom += " />"
         self.append(geom)
 
-    def add_geometries(self, part: Part, T_world_link: np.ndarray):
+    def add_geometries(self, part: Part, T_world_link: np.ndarray, condim: int | None = None):
         """
         Add a part geometries
         """
@@ -285,13 +326,13 @@ class ExporterMuJoCo(Exporter):
             if shape.visual:
                 self.add_shape(part, "visual", T_world_link, shape)
             if shape.collision:
-                self.add_shape(part, "collision", T_world_link, shape)
+                self.add_shape(part, "collision", T_world_link, shape, condim)
 
         for mesh in part.meshes:
             if mesh.visual:
                 self.add_mesh(part, "visual", T_world_link, mesh)
             if mesh.collision:
-                self.add_mesh(part, "collision", T_world_link, mesh)
+                self.add_mesh(part, "collision", T_world_link, mesh, condim)
 
     def add_joint(self, joint: Joint):
         self.append(f"<!-- Joint from {joint.parent.name} to {joint.child.name} -->")
@@ -314,6 +355,10 @@ class ExporterMuJoCo(Exporter):
         joint_limits = joint.properties.get("limits", joint.limits)
         if joint_limits is not None and joint.properties.get("range", True):
             joint_xml += f'range="{joint_limits[0]} {joint_limits[1]}" '
+        
+        if "actuatorfrcrange" in joint.properties:
+            actuatorfrcrange = joint.properties["actuatorforcerange"]
+            joint_xml += f'actuatorfrcrange="{actuatorfrcrange[0]} {actuatorfrcrange[1]}" '
 
         for key in (
             "class",
@@ -391,14 +436,20 @@ class ExporterMuJoCo(Exporter):
         else:
             self.add_joint(parent_joint)
 
+        # Get body properties for this link
+        body_props = self.get_body_properties(link.name)
+
         # Adding inertial properties
         mass, com, inertia = link.get_dynamics(T_world_link)
-        self.add_inertial(mass, com, inertia)
+        self.add_inertial(mass, com, inertia, body_props)
+
+        # Get condim for this body if configured
+        condim = body_props.get("condim")
 
         # Adding geometry objects
         for part in link.parts:
             self.append(f"<!-- Part {part.name} -->")
-            self.add_geometries(part, T_world_link)
+            self.add_geometries(part, T_world_link, condim)
 
         # Adding frames attached to current link
         for frame, T_world_frame in link.frames.items():
