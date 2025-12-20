@@ -357,7 +357,7 @@ class ExporterMuJoCo(Exporter):
             joint_xml += f'range="{joint_limits[0]} {joint_limits[1]}" '
         
         if "actuatorfrcrange" in joint.properties:
-            actuatorfrcrange = joint.properties["actuatorforcerange"]
+            actuatorfrcrange = joint.properties["actuatorfrcrange"]
             joint_xml += f'actuatorfrcrange="{actuatorfrcrange[0]} {actuatorfrcrange[1]}" '
 
         for key in (
