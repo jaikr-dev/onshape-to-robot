@@ -439,8 +439,8 @@ class RobotBuilder:
                 dof.axis,
             )
             if dof.name in self.assembly.relations:
-                source, ratio = self.assembly.relations[dof.name]
-                joint.relation = Relation(source, ratio)
+                source, ratio, name = self.assembly.relations[dof.name]
+                joint.relation = Relation(source, ratio, name)
 
             # The joint is added before the recursive call, ensuring items in robot.joints has the
             # same order as recursive calls on the tree
