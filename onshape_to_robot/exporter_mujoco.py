@@ -198,7 +198,7 @@ class ExporterMuJoCo(Exporter):
                     joint.relation.name, joint.relation.name
                 )
                 self.append(
-                    f'<joint name="{joint.relation.name}" joint1="{joint.name}" joint2="{joint.relation.source_joint}"' +
+                    f'<joint name="{joint.relation.name}" joint1="{joint.name}" joint2="{joint.relation.source_joint}" ' +
                     f'polycoef="0 {joint.relation.ratio} 0 0 0" {attributes}/>'
                 )
 
