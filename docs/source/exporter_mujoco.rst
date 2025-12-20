@@ -92,6 +92,7 @@ Allow to specify the properties of the joints produced in the URDF output. The k
 Possible values are:
 
 * ``actuated``: *(default: true)* whether an actuator should be associated to this joint,
+* ``actuator_name`` custom name for the actuator (defaults to joint name)
 * ``class``: a ``class="..."`` to be added to the joint (and actuator) 
 * ``type`` *(default: position)* defines the actuator that will be produced
 * ``range`` *(default: true)*: if ``true``, the joint limits are reflected on the joint ``range`` attribute

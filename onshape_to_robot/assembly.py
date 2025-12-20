@@ -796,7 +796,7 @@ class Assembly:
                             )
                         )
 
-                    self.relations[mated_dofs[1]] = [mated_dofs[0], ratio]
+                    self.relations[mated_dofs[1]] = [mated_dofs[0], ratio, relation_name]
 
     def read_parameter_value(self, parameter: str, name: str):
         """

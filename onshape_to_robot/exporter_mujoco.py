@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import os
-import fnmatch
+import fnmatch  
 from .message import success, warning, info
 from .robot import Robot, Link, Part, Joint, Closure, Camera
 from .config import Config
@@ -20,9 +20,13 @@ class ExporterMuJoCo(Exporter):
         self.additional_xml: str = ""
         self.meshes: list = []
         self.materials: dict = {}
+        self.equalities: dict = {}
+        self.body_properties: dict = {}
 
         if config is not None:
             self.equalities = self.config.get("equalities", {})
+            # If the key exists it returns its value and if the key does not exist it returns {}
+            self.body_properties = self.config.get("body_properties", {})
             self.no_dynamics = config.no_dynamics
             additional_xml_file = config.get("additional_xml", None, required=False)
             if isinstance(additional_xml_file, str):
@@ -95,7 +99,6 @@ class ExporterMuJoCo(Exporter):
 
     def add_actuators(self, robot: Robot):
         self.append("<actuator>")
-
         for joint in robot.joints:
             if joint.joint_type == "fixed":
                 continue
@@ -109,7 +112,10 @@ class ExporterMuJoCo(Exporter):
             ):
                 type = joint.properties.get("type", "position")
                 actuator_class = joint.properties.get("class", self.default_class)
-                actuator: str = f'<{type} class="{actuator_class}" name="{joint.name}" joint="{joint.name}" '
+                actuator_name = joint.properties.get("actuator_name", joint.name)
+                actuator: str = (
+                    f'<{type} class="{actuator_class}" name="{actuator_name}" joint="{joint.name}" '
+                )
 
                 for key in "kp", "kv", "dampratio":
                     if key in joint.properties:
