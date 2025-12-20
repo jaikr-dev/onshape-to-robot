@@ -221,6 +221,11 @@ class RobotBuilder:
                 partid=instance["partId"],
             )
 
+            # if 'End_Effector' in instance.get('name', ''):
+            #     import json
+            #     print(f"=== {instance.get('name')} ===")
+            #     print(json.dumps(metadata, indent=2))
+
             color = np.array([0.5, 0.5, 0.5, 1.0])
 
             # XXX: There must be a better way to retrieve the part color
