@@ -41,4 +41,5 @@ Processors list
    processor_collision_as_visual
    processor_convex_decomposition
    processor_fixed_links
+   processor_convert_to_cameras
    custom_processors
