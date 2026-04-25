@@ -4,11 +4,11 @@ from .robot import Robot, Camera
 from .message import info
 
 class ProcessorConvertToCameras(Processor):
-   """Convert frames to camera elements.
-   Config: "cameras": {"camera_name": "frame_name", ...}
-   or: "cameras": {"camera_name": {"frame": "frame_name", "fovy": 60, ...}, ...}
-   Each entry maps a camera name to a frame name on a link.
-   """
+  """Convert frames to camera elements.
+  Config: "cameras": {"camera_name": "frame_name", ...}
+  or: "cameras": {"camera_name": {"frame": "frame_name", "fovy": 60, ...}, ...}
+  Each entry maps a camera name to a frame name on a link.
+  """
 
   def __init__(self, config: Config):
     super().__init__(config)
