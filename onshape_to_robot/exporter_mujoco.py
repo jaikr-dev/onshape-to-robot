@@ -366,6 +366,8 @@ class ExporterMuJoCo(Exporter):
             "armature",
             "damping",
             "stiffness",
+            "solreffriction",
+            "solimpfriction",
         ):
             if key in joint.properties:
                 joint_xml += f'{key}="{joint.properties[key]}" '
