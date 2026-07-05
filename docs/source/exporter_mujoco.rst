@@ -104,6 +104,8 @@ Possible values are:
     * ``damping``
     * ``armature``
     * ``stiffness``
+    * ``solreffriction``
+    * ``solimpfriction``
 
 * The following are reflected as actuator (``<position ...>`` or other) attributes:
 
