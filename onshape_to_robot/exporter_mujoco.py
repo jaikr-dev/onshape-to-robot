@@ -426,8 +426,16 @@ class ExporterMuJoCo(Exporter):
             childclass = f'childclass="{self.default_class}" '
         self.append(f"<!-- Link {link.name} -->")
         T_parent_link = np.linalg.inv(T_world_parent) @ T_world_link
+
+        # Get body properties for this link
+        body_props = self.get_body_properties(link.name)
+
+        gravcomp = ""
+        if "gravcomp" in body_props:
+            gravcomp = f'gravcomp="{body_props["gravcomp"]}" '
+
         self.append(
-            f'<body name="{link.name}" {self.pos_quat(T_parent_link)} {childclass}>'
+            f'<body name="{link.name}" {self.pos_quat(T_parent_link)} {gravcomp}{childclass}>'
         )
 
         if parent_joint is None:
@@ -435,9 +443,6 @@ class ExporterMuJoCo(Exporter):
                 self.append(f'<freejoint name="{link.name}_freejoint" />')
         else:
             self.add_joint(parent_joint)
-
-        # Get body properties for this link
-        body_props = self.get_body_properties(link.name)
 
         # Adding inertial properties
         mass, com, inertia = link.get_dynamics(T_world_link)
