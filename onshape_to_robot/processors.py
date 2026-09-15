@@ -8,8 +8,10 @@ from .processor_collision_as_visual import ProcessorCollisionAsVisual
 from .processor_no_collision_meshes import ProcessorNoCollisionMeshes
 from .processor_ball_to_euler import ProcessorBallToEuler
 from .processor_convert_to_cameras import ProcessorConvertToCameras
+from .processor_remove_links import ProcessorRemoveLinks
 
 default_processors = [
+    ProcessorRemoveLinks,
     ProcessorBallToEuler,
     ProcessorScad,
     ProcessorMergeParts,

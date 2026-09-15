@@ -42,4 +42,5 @@ Processors list
    processor_convex_decomposition
    processor_fixed_links
    processor_convert_to_cameras
+   processor_remove_links
    custom_processors

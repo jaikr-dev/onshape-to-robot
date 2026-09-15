@@ -197,4 +197,4 @@ class Robot:
     
 
     def get_link_cameras(self, link: Link):
-        return [camera for camera in self.cameras if camera.link == link.name]
+        return [camera for camera in self.cameras if camera.link_name == link.name]
