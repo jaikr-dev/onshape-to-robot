@@ -401,10 +401,15 @@ class ExporterMuJoCo(Exporter):
 
         camera_xml: str = f'<camera name="{camera.name}" '
         camera_xml += self.pos_quat(T_link_camera) + " "
-        camera_xml += f'fovy="{camera.fovy}" '
-        camera_xml += f'mode="{camera.mode}" '
-        camera_xml += f'resolution="{camera.resolution[0]} {camera.resolution[1]}" '
-        camera_xml += " />"
+        # Only write attributes that were configured, so an unconfigured camera
+        # gets MuJoCo's defaults (fovy 45, mode fixed, resolution 1 1).
+        if camera.fovy is not None:
+            camera_xml += f'fovy="{camera.fovy}" '
+        if camera.mode is not None:
+            camera_xml += f'mode="{camera.mode}" '
+        if camera.resolution is not None:
+            camera_xml += f'resolution="{camera.resolution[0]} {camera.resolution[1]}" '
+        camera_xml += "/>"
 
         self.append(camera_xml)
 

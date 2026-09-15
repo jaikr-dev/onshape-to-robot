@@ -152,16 +152,18 @@ class Camera:
         name: str,
         link_name: str,
         T_link_camera: np.ndarray,
-        fovy: float = 45.0,
-        mode: str = "fixed",
-        resolution: tuple[int, int] = (640, 480),
+        fovy: float | None = None,
+        mode: str | None = None,
+        resolution: tuple[int, int] | None = None,
     ):
         self.name: str = name
         self.link_name: str = link_name
         self.T_link_camera: np.ndarray = T_link_camera
-        self.fovy: float = fovy
-        self.mode: str = mode
-        self.resolution: tuple[int, int] = resolution
+        # Optional attributes; None means "not set", so the exporter leaves the
+        # attribute out and MuJoCo applies its own default.
+        self.fovy: float | None = fovy
+        self.mode: str | None = mode
+        self.resolution: tuple[int, int] | None = resolution
 
 
 class Robot:

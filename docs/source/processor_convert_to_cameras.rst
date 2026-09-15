@@ -21,7 +21,7 @@ Frames are automatically matched to camera names using the ``cameras`` configura
         // ...
 
         "cameras": {
-            // Simple form: just a frame name (uses defaults)
+            // Simple form: just a frame name (MuJoCo defaults apply)
             "wrist_camera": "wrist_camera_frame",
 
             // Extended form: configure camera properties
@@ -39,13 +39,15 @@ Frames are automatically matched to camera names using the ``cameras`` configura
 
 Maps camera names to frame names defined in your Onshape assembly. The keys are the camera names that will appear in the MuJoCo XML. The values can be either:
 
-* A **string**: the frame name (all camera properties use defaults)
+* A **string**: the frame name. No camera attributes are written, so MuJoCo applies its own defaults (``fovy`` 45, ``mode`` fixed, ``resolution`` 1 1).
 * A **dict** with the following keys:
 
   * ``frame`` *(required)*: the frame name in your Onshape assembly
-  * ``fovy`` *(default: 45)*: vertical field of view in degrees
-  * ``mode`` *(default: "fixed")*: MuJoCo camera mode
-  * ``resolution`` *(default: [640, 480])*: image resolution as ``[width, height]``
+  * ``fovy`` *(optional)*: vertical field of view in degrees
+  * ``mode`` *(optional)*: MuJoCo camera mode
+  * ``resolution`` *(optional)*: image resolution as ``[width, height]``
+
+  Only the keys you set are written to the XML; anything left out falls back to MuJoCo's default.
 
 To add cameras to your robot:
 
@@ -75,5 +77,8 @@ Cameras will be exported as ``<camera>`` elements within the appropriate body ta
         <!-- ... body content ... -->
 
         <!-- Camera wrist_camera -->
-        <camera name="wrist_camera" pos="0 0.04 0" quat="0 0 1 0" fovy="45" mode="fixed" resolution="640 480" />
+        <camera name="wrist_camera" pos="0 0.04 0" quat="0 0 1 0"/>
+
+        <!-- Camera head_camera -->
+        <camera name="head_camera" pos="0 0.1 0" quat="0 0 1 0" fovy="60" mode="fixed" resolution="1280 720"/>
     </body>
